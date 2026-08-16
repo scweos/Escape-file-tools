@@ -1,50 +1,110 @@
-# Escape File Tools
+Escape File Tools
+Local-first, zero-dependency command-line utilities for everyday file management.
+Escape File Tools is a small, focused set of Python utilities designed to help you clean up and reorganize files on your local machine without relying on any external services or heavy dependencies. It prioritizes safety, predictability, and simplicity.
+The tool provides three core commands:
 
-Local-first, dependency-free Python CLI utilities for everyday file management.
+Deduplication of files by content
+Organization of files by file extension
+Batch renaming with flexible naming rules
 
-Escape from messy folders with simple, offline tools.
+All operations are performed entirely offline. No data is uploaded, no network requests are made, and no telemetry is collected.
+Design Goals
 
-## Features
+Safe by default: Destructive operations require explicit flags. Deletion of duplicates additionally requires interactive confirmation.
+Deterministic behavior: When multiple files have identical content, the file with the lexicographically smallest path is kept. This makes results reproducible.
+Minimal dependencies: Only the Python standard library is used. There are no third-party packages required at runtime.
+Predictable dry-run: Most operations default to dry-run mode so you can review the planned changes before applying them.
+Clear feedback: The tool prints structured information about what it finds and what it intends to do.
 
-- Dedup: Find (and optionally remove) duplicate files by content hash (SHA-256)
-- Organize: Automatically sort files into folders by extension
+Features
+Dedup
+Scans a directory for files that have identical content using SHA-256 hashing.
 
-## Requirements
+First groups files by size (cheap filter)
+Only computes cryptographic hashes for files that share the same size
+Supports recursive and non-recursive scanning
+Supports ignore patterns
+Dry-run by default
+Actual deletion requires the --delete flag and typing yes at the confirmation prompt
+The kept file in each duplicate group is chosen deterministically
 
-- Python 3.8+
+Organize
+Moves files into subdirectories named after their file extension.
 
-## Installation
+Files without an extension are placed into a folder named no_extension
+Name collisions are automatically resolved by appending a numeric suffix
+Supports recursive mode (files are flattened into extension folders under the root)
+Dry-run by default
+Supports ignore patterns
 
+Rename
+Batch renames files according to a consistent naming scheme.
+
+Supports prefix and suffix
+Supports sequential numbering with zero-padding
+Supports optional date prefix (YYYYMMDD_)
+Supports simple string replacement via --pattern old=new
+Original file extension is always preserved
+Name collisions are automatically resolved
+Dry-run by default
+Supports recursive mode and ignore patterns
+
+Requirements
+
+Python 3.8 or later
+No third-party packages required
+
+Installation
+Clone the repository and install it in editable mode:
 git clone https://github.com/scweos/Escape-file-tools.git
 cd Escape-file-tools
+pip install -e .
+After installation the escape-files command is available in your environment:
+escape-files --help
+You can also run the module directly without installing:
+python -m escape_file_tools.cli --help
+Usage
+Find duplicate files
+Preview mode (recommended first step):
+escape-files dedup /path/to/folder
+Actually delete duplicates (will ask for confirmation):
+escape-files dedup /path/to/folder --delete
+Do not scan subdirectories:
+escape-files dedup /path/to/folder --no-recursive
+Ignore certain patterns:
+escape-files dedup /path/to/folder --ignore "*.tmp" ".DS_Store" "Thumbs.db"
+Organize files by extension
+Preview:
+escape-files organize /path/to/folder
+Apply the changes:
+escape-files organize /path/to/folder --no-dry-run
+Process files in subdirectories as well (files will be moved into extension folders under the root directory):
+escape-files organize /path/to/folder --recursive --no-dry-run
+Batch rename files
+Preview a sequential rename:
+escape-files rename /path/to/folder --prefix img_ --start 1
+Apply the rename:
+escape-files rename /path/to/folder --prefix img_ --start 1 --no-dry-run
+Add a date prefix:
+escape-files rename /path/to/folder --prefix photo_ --date --no-dry-run
+Simple string replacement:
+escape-files rename /path/to/folder --pattern "oldname=newname" --no-dry-run
+Combine options:
+escape-files rename /path/to/folder --prefix trip_ --suffix _final --start 100 --date --no-dry-run
+Safety Notes
 
-## Usage
+Always run commands in dry-run / preview mode first.
+The --delete flag for deduplication is irreversible once confirmed. Make sure you have backups of important data.
+When using --recursive with organize, files from subdirectories are flattened into extension folders at the root level. The original subdirectory structure is not preserved.
+The tool only operates on regular files. Symbolic links, directories, and special files are skipped.
 
-Find duplicates:
-python main.py dedup /path/to/folder
-
-Find and delete duplicates (use with caution):
-python main.py dedup /path/to/folder --delete
-
-Organize files by extension (recommended to dry-run first):
-python main.py organize /path/to/folder --dry-run
-python main.py organize /path/to/folder
-
-## Why this project?
-
-Many people need simple, offline tools that don't require installing heavy packages or sending data to the cloud. This project provides small, reliable utilities that just work.
-
-## Roadmap
-
-- Add dry-run support for dedup
-- Support ignoring certain file patterns
-- Add progress indicator for large directories
-- Package as a proper CLI tool
-
-## Contributing
-
-Issues and pull requests are welcome. Please keep changes focused.
-
-## License
-
-MIT
+Project Structure
+escape_file_tools/
+├── init.py
+├── cli.py          # Command-line interface
+├── dedup.py        # Duplicate detection and removal
+├── organize.py     # Extension-based organization
+├── rename.py       # Batch renaming
+└── utils.py        # Shared helpers
+License
+MIT License. See the LICENSE file for details.
